@@ -24,7 +24,11 @@ export const config = {
   runtime: "edge",
 };
 
-const llm = new OpenAI({});
+const llm = new OpenAI({
+  modelName: "gpt-3.5-turbo",
+  temperature: 0.2,
+  verbose: true,
+});
 
 let pinecone: PineconeClient | null = null;
 
@@ -103,7 +107,8 @@ const handler = async (req: Request): Promise<Response> => {
     ).map(([_, text]) => text);
 
   const onSummaryDone = (summary: string) => {
-    console.log("==== summary DONE ====", summary);
+    // console.log("==== summary DONE ====", summary);
+    console.log("==== summary DONE ====");
   };
 
   const summary = await summarizeLongDocument(
@@ -111,8 +116,6 @@ const handler = async (req: Request): Promise<Response> => {
     inquiry,
     onSummaryDone
   );
-
-  // console.log("summary ====>", summary);
 
   const conversation: string = messages
     .map((message: Message) => `${message.role}: ${message.content}`)
@@ -140,6 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
         streaming: true,
         verbose: true,
         modelName: "gpt-3.5-turbo",
+        temperature: 0.2,
         callbackManager: CallbackManager.fromHandlers({
           handleLLMNewToken: onNewToken,
           handleLLMEnd: onEnd,

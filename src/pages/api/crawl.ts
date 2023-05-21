@@ -5,7 +5,7 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { TokenTextSplitter } from "langchain/text_splitter";
 import { NextApiRequest, NextApiResponse } from "next";
 import { v4 as uuidv4 } from "uuid";
-import { Crawler, Page } from "../../crawler";
+import { Crawler, Page } from "../../utils/crawler";
 
 const limiter = new Bottleneck({
   minTime: 2000,
