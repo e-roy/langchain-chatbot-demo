@@ -1,48 +1,47 @@
 # Pinecone Chatbot Demo
 
-This is a simple demo using Langchain, OpenAI and Pinecone. This was based from the `https://github.com/pinecone-io/chatbot-demo` demo.
+This is a simple demo using Langchain, OpenAI and Chroma.
 
 To run this demo, you need to have:
 
-1. A Pinecone account. If you don't have one, you can sign up for free at [pinecone.io](https://www.pinecone.io).
+1. A Chroma client using Docker - [docs.trychroma.com](https://docs.trychroma.com/).
 2. An OpenAI account. If you don't have one, you can sign up for free at [openai.com](https://www.openai.com).
 
 ## What it does
 
-A simple chatbot to interact with any website doc that is crawled and indexed in Pinecone. In local development only, developer can crawl any website that is in the variable `NEXT_PUBLIC_CRAWL_URL` in the `.env`. A button at the bottom of the page labeled "crawl", that only shows up in development only, will initiates crawlling the website. Once finished, user can ask questions about the docs.
+A simple chatbot to interact with any website that you enter in the top input field. In local development only.
 
 ## Setup
 
-1. Clone this repository
+1. Create a Chroma client using Docker
+
+```
+git clone git@github.com:chroma-core/chroma.git
+cd chroma
+docker-compose up -d --build
+```
+
+2. Clone this repository
 
 ```bash
 git clone https://github.com/e-roy/langchain-chatbot-demo.git
 ```
 
-2. Install dependencies
+3. Install dependencies
 
 ```bash
 cd langchain-chatbot-demo
-npm install
+yarn install
 ```
 
-1. Create your Pinecone and OpenAI accounts and get your API keys
-
-2. Create your Pinecone index
-
-3. Create a `.env` file in the root directory of the project and add your API keys:
+4. Create a `.env` file in the root directory of the project and add your API keys:
 
 ```
 OPENAI_API_KEY=...
-PINECONE_API_KEY=...
-PINECONE_ENVIRONMENT=...
-PINECONE_INDEX_NAME=...
-API_ROOT="http://localhost:3000"
-NEXT_PUBLIC_CRAWL_URL=
 ```
 
 ## Start the development server
 
 ```bash
-npm run dev
+yarn dev
 ```

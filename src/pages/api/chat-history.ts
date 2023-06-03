@@ -1,10 +1,49 @@
-// api/chat.ts
+// api/chat-history.ts
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { CallbackManager } from "langchain/callbacks";
 import { Chroma } from "langchain/vectorstores/chroma";
 import { HumanChatMessage, SystemChatMessage } from "langchain/schema";
-import { RetrievalQAChain } from "langchain/chains";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
+import { BufferMemory } from "langchain/memory";
+
+const CONDENSE_PROMPT = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
+
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:`;
+
+const QA_PROMPT = `You are a helpful AI assistant. Use the following pieces of context to answer the question at the end.
+If you don't know the answer, just say you don't know. DO NOT try to make up an answer.
+If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.
+
+{context}
+
+Question: {question}
+Helpful answer in markdown:`;
+
+const modelDefault = new ChatOpenAI({
+  temperature: 0.2, // increase temepreature to get more creative answers
+  modelName: "gpt-3.5-turbo", //change this to gpt-4 if you have access
+});
+
+export const makeChain = (vectorstore: Chroma, model?: ChatOpenAI) => {
+  const chain = ConversationalRetrievalQAChain.fromLLM(
+    model ? model : modelDefault,
+    vectorstore.asRetriever(),
+    {
+      memory: new BufferMemory({
+        memoryKey: "chat_history",
+      }),
+      qaTemplate: QA_PROMPT,
+      questionGeneratorTemplate: CONDENSE_PROMPT,
+      returnSourceDocuments: true, //The number of source documents returned is 4 by default
+      verbose: true,
+    }
+  );
+  return chain;
+};
 
 function jsonToConversation(
   json: Message[]
@@ -46,11 +85,11 @@ const handler = async (req: Request): Promise<Response> => {
   const question = messages[messages.length - 1].content;
 
   const conversation = jsonToConversation(messages);
-  // console.log("conversation", conversation);
+  console.log("conversation", conversation);
 
   const vectorStore = await Chroma.fromExistingCollection(
     new OpenAIEmbeddings(),
-    { collectionName: "website-collection" }
+    { collectionName: "a-test-collection" }
   );
 
   const encoder = new TextEncoder();
@@ -68,6 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const model = new ChatOpenAI({
         streaming: true,
+        // verbose: true,
         modelName: "gpt-3.5-turbo",
         temperature: 0.2,
         callbackManager: CallbackManager.fromHandlers({
@@ -76,16 +116,13 @@ const handler = async (req: Request): Promise<Response> => {
         }),
       });
 
-      // I wanted to use ConversationalRetrievalQAChain, but was experiencing some issues
-      // - the user's question was being returned as a response
-      // - caused issues with handleLLMNewToken and handleLLMEnd
-      // conversation is available for history, but not used
-      const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
-        returnSourceDocuments: true, //The number of source documents returned is 4 by default
-        // verbose: true,
-      });
+      // create chain
+      const chain = makeChain(vectorStore, model);
+      //Ask a question using chat history
       chain.call({
-        query: question,
+        question,
+        chat_history: conversation || [],
+        verbose: true,
       });
     },
   });
