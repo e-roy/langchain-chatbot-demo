@@ -1,4 +1,4 @@
-# Pinecone Chatbot Demo
+# Langchain Chatbot Demo
 
 This is a simple demo using Langchain, OpenAI and Chroma.
 
