@@ -1,99 +1,71 @@
-// utils\crawler.ts
-//@ts-ignore
-import * as Spider from "node-spider";
-//@ts-ignore
-import * as TurndownService from "turndown";
-import * as cheerio from "cheerio";
-
-const turndownService = new TurndownService();
+import fetch from "node-fetch";
+import { load } from "cheerio";
 
 export type Page = {
   url: string;
-  text: string;
-  title: string;
 };
+
 class Crawler {
   pages: Page[] = [];
   limit: number = 1000;
   urls: string[] = [];
-  spider: Spider | null = {};
   count: number = 0;
-  textLengthMinimum: number = 200;
+  visited: { [key: string]: boolean } = {}; // Keep track of visited URLs
 
-  constructor(
-    urls: string[],
-    limit: number = 1000,
-    textLengthMinimum: number = 200
-  ) {
+  constructor(urls: string[], limit: number = 1000) {
     this.urls = urls;
     this.limit = limit;
-    this.textLengthMinimum = textLengthMinimum;
-
     this.count = 0;
     this.pages = [];
-    this.spider = {};
   }
 
-  handleRequest = (doc: any) => {
-    const $ = cheerio.load(doc.res.body);
-    //Remove obviously superfulous elements
-    $("script").remove();
-    $("header").remove();
-    $("nav").remove();
-    const title = $("title").text() || "";
-    const html = $("body").html();
-    const text = turndownService.turndown(html);
+  handleRequest = async (url: string) => {
+    if (this.visited[url]) return; // Skip URLs that have already been visited
+    this.visited[url] = true;
 
-    const page: Page = {
-      url: doc.url,
-      text,
-      title,
-    };
-    if (text.length > this.textLengthMinimum) {
+    try {
+      const res = await fetch(url);
+      const html = await res.text();
+      const $ = load(html);
+      $("script").remove();
+      $("style").remove();
+
+      const page: Page = {
+        url: url,
+      };
       this.pages.push(page);
-    }
 
-    doc.$("a").each((i: number, elem: any) => {
-      var href = doc.$(elem).attr("href")?.split("#")[0];
-      var url = href && doc.resolve(href);
-      // crawl more
-      if (
-        url &&
-        this.urls.some((u) => url.includes(u)) &&
-        this.count < this.limit
-      ) {
-        this.spider.queue(url, this.handleRequest);
-        this.count = this.count + 1;
-      }
-    });
+      const promises: Promise<void>[] = [];
+
+      $("a").each((i, el) => {
+        const href = $(el).attr("href")?.split("#")[0];
+        if (href) {
+          const fullUrl = new URL(href, url).href;
+          if (
+            !fullUrl.startsWith("data:") &&
+            fullUrl.length < 2048 &&
+            this.urls.some((u) => fullUrl.includes(u)) &&
+            this.count < this.limit
+          ) {
+            promises.push(this.handleRequest(fullUrl));
+            this.count++;
+          }
+        }
+      });
+
+      await Promise.all(promises);
+    } catch (error) {
+      console.error(`Failed to fetch page content from ${url}: ${error}`);
+    }
   };
 
   start = async () => {
     this.pages = [];
-    return new Promise((resolve, reject) => {
-      this.spider = new Spider({
-        concurrent: 5,
-        delay: 0,
-        allowDuplicates: false,
-        catchErrors: true,
-        addReferrer: false,
-        xhr: false,
-        keepAlive: false,
-        error: (err: any, url: string) => {
-          console.log(err, url);
-          reject(err);
-        },
-        // Called when there are no more requests
-        done: () => {
-          resolve(this.pages);
-        },
-        headers: { "user-agent": "node-spider" },
-        encoding: "utf8",
-      });
-      this.urls.forEach((url) => {
-        this.spider.queue(url, this.handleRequest);
-      });
-    });
+    for (const url of this.urls) {
+      await this.handleRequest(url);
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay of 1 second between each request
+    }
+    return this.pages;
   };
 }
 
