@@ -1,19 +1,29 @@
-import { useState } from "react";
+"use client";
+// components/CrawlSite.tsx
+import { useState, ChangeEvent, FormEvent } from "react";
+
+interface FetchResponse {
+  ok: boolean;
+  status: number;
+}
 
 export const CrawlSite = () => {
-  const [crawlUrl, setCrawlUrl] = useState("");
-  const [activeUrl, setActiveUrl] = useState("");
+  const [crawlUrl, setCrawlUrl] = useState<string>("");
+  const [activeUrl, setActiveUrl] = useState<string>("");
 
-  const handleCrawl = async (event: React.FormEvent) => {
+  const handleCrawl = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setActiveUrl("Crawling...");
 
-    const response = await fetch(`/api/crawl?urls=${crawlUrl}&limit=20`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response: FetchResponse = await fetch(
+      `/api/crawl?urls=${crawlUrl}&limit=20`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       setActiveUrl("ERROR");
@@ -22,28 +32,21 @@ export const CrawlSite = () => {
       setActiveUrl(crawlUrl);
     }
   };
+
   return (
     <>
-      <form onSubmit={handleCrawl} style={{ display: "flex", padding: "10px" }}>
+      <form onSubmit={handleCrawl}>
         <input
           type="text"
-          style={{ flex: 1, padding: "8px", borderRadius: "8px" }}
           value={crawlUrl}
-          onChange={(e) => setCrawlUrl(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setCrawlUrl(e.target.value)
+          }
           placeholder="Enter URL to crawl"
         />
-        <button
-          type={`submit`}
-          style={{
-            marginLeft: "10px",
-            padding: "8px 16px",
-            borderRadius: "8px",
-          }}
-        >
-          Crawl
-        </button>
+        <button type="submit">Crawl</button>
       </form>
-      <div style={{ padding: "8px" }}>Active site :{activeUrl}</div>
+      <div style={{ padding: "8px" }}>Active site: {activeUrl}</div>
     </>
   );
 };

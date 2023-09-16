@@ -1,7 +1,8 @@
 // api/chat/route.ts
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { Chroma } from "langchain/vectorstores/chroma";
-import { RetrievalQAChain } from "langchain/chains";
+import { RetrievalQAChain, loadQAStuffChain } from "langchain/chains";
+import { PromptTemplate } from "langchain/prompts";
 
 import { StreamingTextResponse, LangChainStream } from "ai";
 import { ChatOpenAI } from "langchain/chat_models/openai";
@@ -11,6 +12,15 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 export const runtime = "nodejs";
+
+const promptTemplate = `Use the following pieces of context to answer the question at the end.  Be sure to list all urls for reference. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+{context}
+
+Question: {question}
+Answer in Markdown:`;
+
+const prompt = PromptTemplate.fromTemplate(promptTemplate);
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -32,10 +42,11 @@ export async function POST(req: Request) {
     callbacks: [handlers],
   });
 
-  const chain = RetrievalQAChain.fromLLM(llm, vectorStore.asRetriever(), {
-    returnSourceDocuments: true, //The number of source documents returned is 4 by default
-    // verbose: true,
+  const chain = new RetrievalQAChain({
+    combineDocumentsChain: loadQAStuffChain(llm, { prompt }),
+    retriever: vectorStore.asRetriever(),
   });
+
   chain.call({
     query: question,
   });

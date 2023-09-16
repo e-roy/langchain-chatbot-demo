@@ -1,7 +1,87 @@
-html {
-  font-family: "mediumllweb", "sans-serif";
-}
-p > a {
-  color: #192bd5;
-  text-decoration: underline;
-}
+ /* styles/globals.css */
+
+ html {
+   font-family: "mediumllweb", "sans-serif";
+ }
+
+ p>a {
+   color: #192bd5;
+   text-decoration: underline;
+ }
+
+ form {
+   display: flex;
+   flex-direction: row;
+   gap: 8px;
+ }
+
+ input {
+   flex: 1;
+   padding: 8px;
+   border-radius: 8px;
+ }
+
+ button {
+   padding: 8px 16px;
+   border-radius: 8px;
+ }
+
+ .indexPage-container {
+   height: 95vh;
+   display: flex;
+   flex-direction: column;
+ }
+
+ .message-container {
+   flex: 1;
+   overflow-y: auto;
+   margin-bottom: 10px;
+ }
+
+ .message-div {
+   display: flex;
+   justify-content: flex-start;
+   padding: 10px;
+ }
+
+ .message-div.user {
+   justify-content: flex-end;
+ }
+
+ .markdown-pre {
+   background-color: #2B2B2B;
+   color: #fff;
+   padding: 1rem;
+ }
+
+ .markdown-a {
+   color: #4553d6;
+ }
+
+ .markdown-a:hover {
+   color: #192bd5;
+   text-decoration: underline;
+ }
+
+ .markdown-div {
+   background-color: #c2c0c0;
+   padding: 10px;
+   border-radius: 8px;
+ }
+
+ .markdown-div.user {
+   background-color: #2b7de9;
+   color: #fff
+ }
+
+ .time-div {
+   display: flex;
+   justify-content: flex-start;
+   margin: 10px;
+   font-size: 12px;
+   padding: 0 10px;
+ }
+
+ .time-div.user {
+   justify-content: flex-end;
+ }

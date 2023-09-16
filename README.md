@@ -11,6 +11,12 @@ To run this demo, you need to have:
 
 A simple chatbot to interact with any website that you enter in the top input field. In local development only.
 
+After you enter a URL to crawl:
+
+- if `website-collection` exists, is deleted. This is so you are only having a conversation with info from one site.
+- url entered and urls found in crawl will be broken up into chunks and embeddeding to store in Chroma vector db as `website-collection`
+- chat is now ready to ask questions about the site.
+
 ## Setup
 
 1. Create a Chroma client using Docker
